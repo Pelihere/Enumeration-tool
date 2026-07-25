@@ -8,29 +8,79 @@ from NTP_enu import NTPEnumeration as NE
 from IPsec_enu import IPsecEnumeration as IE
 from validators import ipv4, domain
 
+
 enumeration_modules = {
+    25: SME,
     53: DE,
     123: NE,
+    139: SNE,
     161: SE,
     389: LE,
-    636: LE,
-    25: SME,
-    139: SNE,
     445: SNE,
     500: IE,
+    636: LE,
     4500: IE,
 }
 
-def get_basec_info():
-    target = input("[+] Enter target to scan : ")
-    if (ipv4(target) or domain(target)):
-        openPorts = port_scan.scan(target=target)
 
-    return openPorts
+def get_basic_info():
+    target = input("[+] Enter target: ").strip()
 
-def enumerationn_executer(ports):
-    pass
+    if not (ipv4(target) or domain(target)):
+        print("[-] Invalid IP address or domain.")
+        return None, None
+
+    scanner = port_scan(target)
+    open_ports = scanner.scan()
+
+    return target, open_ports
+
+
+def enumeration_executor(target, ports):
+    results = {}
+    executed = set()
+
+    for port in ports:
+
+        module = enumeration_modules.get(port)
+
+        if module is None:
+            continue
+
+        if module in executed:
+            continue
+
+        executed.add(module)
+
+        print(f"\n[#] Running {module.__name__}...")
+
+        try:
+
+            # SMTP ساختارش با بقیه فرق دارد
+            if module == SME:
+                enum = module()
+                results[module.__name__] = enum.enumerate(target, port)
+
+            else:
+                enum = module(target)
+                results[module.__name__] = enum.run(ports)
+
+        except Exception as e:
+            print(f"[-] {module.__name__} failed.\nError: {e}")
+
+    return results
 
 
 if __name__ == "__main__":
-    enumerationn_executer(get_basec_info())
+
+    target, ports = get_basic_info()
+
+    if target and ports:
+
+        results = enumeration_executor(target, ports)
+
+        print("\n========== RESULTS ==========")
+
+        for module, output in results.items():
+            print(f"\n[{module}]")
+            print(output)
