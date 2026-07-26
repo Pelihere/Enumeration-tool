@@ -1,51 +1,48 @@
-import subprocess
+from core.command_runner import CommandRunner
 
 class NTPEnumeration:
     def __init__(self, target):
         self.target = target
+        self.runner = CommandRunner()
 
-    def _ntp_walker(self, args, timeout=5):
-        try:
-            result = subprocess.run(args, capture_output=True, text=True, timeout=timeout)
-            return result
-        except FileNotFoundError:
-            print(f"[-] {args[0]} is not installed!")
-        except subprocess.TimeoutExpired:
-            print(f"[-] {args[0]} timed out on {self.target}")
-        except Exception as e:
-            print(f"[-] something went wrong while running {args[0]}. Error:\n{e}")
-        return None
+    def _walker(self, args):
+        return self.runner.run(args)
+
 
     def version_enu(self):
-        print("[+] running ntpq for version detection ...")
-        return self._ntp_walker(["ntpq", "-c", "rv 0 version", self.target])
+        #TODO print("[+] running ntpq for version detection ...")
+        return self._walker(["ntpq", "-c", "rv 0 version", self.target])
     
     def peer_enu(self):
-        print("[+] running ntpq for peer enumeration ...")
-        return self._ntp_walker(["ntpq", "-c", "peers", self.target])
+        #TODO print("[+] running ntpq for peer enumeration ...")
+        return self._walker(["ntpq", "-c", "peers", self.target])
 
-    def system_valriables_enu(self):
-        print("[+] running ntpq for system variables detection ...")
-        return self._ntp_walker(["ntpq", "-c", "readvar", self.target])
+    def system_variables_enu(self):
+        #TODO print("[+] running ntpq for system variables detection ...")
+        return self._walker(["ntpq", "-c", "readvar", self.target])
 
     def monlist_enu(self):
-        print("[+] running ntpdc for Monlist enumeration ...")
-        print("[*] monlist is old so it may be useless here.")
-        return self._ntp_walker(["ntpdc", "-c", "monlist", self.target])
+        #TODO print("[+] running ntpdc for Monlist enumeration ...")
+        #TODO print("[*] monlist is old so it may be useless here.")
+        return self._walker(["ntpdc", "-c", "monlist", self.target])
 
-    def sysinfo_enu(self):
-        print("[+] running ntpq ...")
-        return self._ntp_walker(["ntpq", "-c", "sysinfo", self.target])
+    def system_info_enu(self):
+        #TODO print("[+] running ntpq ...")
+        return self._walker(["ntpq", "-c", "sysinfo", self.target])
 
 
     def run(self):
         results = {}
 
+        enumerations = {            
+            "version" : self.version_enu,
+            "peer" : self.peer_enu,
+            "system_variables" : self.system_variables_enu,
+            "monlist" : self.monlist_enu,
+            "system_information" : self.system_info_enu
+        }
 
-        results["version"] = self.version_enu()
-        results["Peer"] = self.peer_enu()
-        results["SysVal"] = self.system_valriables_enu()
-        results["Monlist"] = self.monlist_enu()
-        results["SysInfo"] = self.sysinfo_enu()
+        for name, func in enumerations.items():
+            results[name] = func()
 
         return results

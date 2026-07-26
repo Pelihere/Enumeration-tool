@@ -1,11 +1,11 @@
-from port_scanner import port_scan
-from smb_Netbios_enu import SMBNetBIOSEnumeration as SNE
-from SNMP_enu import SNMPEnumeration as SE
-from LDAP_enu import LDAPEnumeration as LE
-from SMTP_enu import SMTPEnumeration as SME
-from DNS_enu import DNSEnumeration as DE
-from NTP_enu import NTPEnumeration as NE
-from IPsec_enu import IPsecEnumeration as IE
+from core.port_scanner import port_scan
+from modules.SMTP_enu import SMTPEnumeration as SNE
+from modules.SNMP_enu import SNMPEnumeration as SE
+from modules.LDAP_enu import LDAPEnumeration as LE
+from modules.SMTP_enu import SMTPEnumeration as SME
+from modules.DNS_enu import DNSEnumeration as DE
+from modules.NTP_enu import NTPEnumeration as NE
+from modules.IPsec_enu import IPsecEnumeration as IE
 from validators import ipv4, domain
 
 

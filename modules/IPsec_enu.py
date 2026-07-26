@@ -1,67 +1,47 @@
-import subprocess
+from core.command_runner import CommandRunner
 
 class IPsecEnumeration:
 
     def __init__(self, target):
         self.target = target
+        self.runner = CommandRunner()
 
 
-    def IKE_walker(self, extra_args=None):
+    def _ike_scan(self, extra_args=None):
         cmd = ["ike-scan"]
         if extra_args:
-            cmd.append(extra_args)
+            cmd.extend(extra_args)
         cmd.append(self.target)
 
-        try:
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-            print(f"[+] running ike-scan {extra_args or '(default)'} ...")
-            return result
-        except FileNotFoundError:
-            print("[-] ike-scan is not installed !")
-        except subprocess.TimeoutExpired:
-            print("[-] connection timed out.")
-        except Exception as e:
-            print(f"[-] something went wrong while running ike-scan. Error: \n {e}")
-        return None
+        return self.runner.run(cmd)
+        #TODO print(f"[+] running ike-scan {extra_args} ...")
+
     
-    def IKE_enu(self):
-        return self.IKE_walker()
+    def ike_enu(self):
+        return self._ike_scan()
     
     def fingerprinting_enu(self):
-        return self.IKE_walker("--multiline")
+        return self._ike_scan(["--multiline"])
 
     def aggressive_mode_enu(self):
-        return self.IKE_walker("--aggressive")
+        #! work only if the gateway supports IKE aggressive mode
+        return self._ike_scan(["--aggressive"])
     
     def ike_version_enu(self):
-        IVInfo = None
-        try:
-            IVInfo = subprocess.run(["nmap", "-sU", "-p500", "--script", "ike-version", self.target], 
-                                    capture_output=True, 
-                                    text=True,
-                                    timeout=10)
-            
-            print("[+] running nmap for ike version enumeration ...")
-
-        except FileNotFoundError:
-            print("[-] nmap is not installed !")
-            return None
-        except subprocess.TimeoutExpired:
-            print("[-] connection timed out.")
-            return None
-        except Exception as e:
-            print(f"[-] something went wrong while running nmap. Error: \n {e}")
-            return None
-        
-        return IVInfo
+        return self.runner.run(["nmap", "-sU", "-p500", "--script", "ike-version", self.target])
     
 
     def run(self):
         results = {}
 
-        results["ike"] = self.IKE_enu()
-        results["fingerprint"] = self.fingerprinting_enu()
-        results["aggressive_mode"] = self.aggressive_mode_enu()
-        results["ike_version"] = self.ike_version_enu()
+        enumerations = {
+            "ike" : self.ike_enu,
+            "ike_version" : self.ike_version_enu,
+            "fingerprint" : self.fingerprinting_enu,
+            "aggressive_mode" : self.aggressive_mode_enu
+        }
+
+        for name, func in enumerations.items():
+            results[name] = func()
 
         return results

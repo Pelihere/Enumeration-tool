@@ -17,7 +17,7 @@ class SMBNetBIOSEnumeration:
             command = ["nmblookup", "-A", self.target]
 
         else:
-            print("[-] Unsupported operating system")
+            #TODO print("[-] Unsupported operating system")
             return None
 
         return self.runner.run(command)
