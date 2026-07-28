@@ -1,4 +1,5 @@
 from core.command_runner import CommandRunner
+from formatters.formatter import Formatter
 
 class SNMPEnumeration:
     def __init__(self, target, community="public"):
@@ -6,33 +7,40 @@ class SNMPEnumeration:
         self.community = community
         self.version = None
         self.runner = CommandRunner()
+        self.output = Formatter()
+        self.enumeration_type = "SNMP Enumeration"
+
+    def _execute(self, command):
+        results = self.runner.run(command)
+        self.output.print_display(results)
+        return results
 
     def version_detection(self):
         ver2_info = self.runner.run(["snmpwalk", "-v2c", "-c", self.community, self.target, "1.3.6.1.2.1.1"])
 
         if ver2_info["success"]:
-            #TODO use formmatter module here for version 2 success
+            self.output.print_info("SNMP v2c detected.")
             self.version = "2c"
             return True
 
-        #TODO use formmatter module here for version 2 failure
+        self.output.print_warning("SNMP v2c probe failed, trying v1...")
 
         ver1_info = self.runner.run(["snmpwalk", "-v1", "-c", self.community, self.target, "1.3.6.1.2.1.1"])
 
         if ver1_info["success"]:
-            #TODO use formmatter module here for version 1 success
+            self.output.print_info("SNMP v1 detected.")
             self.version = "1"
             return True
 
-        #TODO use formmatter module here for both version failure
+        self.output.print_warning("version detection for snmpwalk failed.")
         return False
 
     def _walker(self, oid):
         if self.version is None:
-            #TODO use formmatter module here
+            self.output.print_warning("snmpwalk version is not detected.")
             return {}
 
-        return self.runner.run(
+        return self._execute(
                 [
                     "snmpwalk",
                     f"-v{self.version}",
@@ -71,7 +79,10 @@ class SNMPEnumeration:
     
     def run(self):
         results = {}
+        self.output.print_header(self.enumeration_type)
         if not self.version_detection():
+            self.output.print_summary({})
+            self.output.print_footer()
             return {}
         
         enumerations = {
@@ -88,5 +99,8 @@ class SNMPEnumeration:
 
         for name, func in enumerations.items():
             results[name] = func()
+
+        self.output.print_summary(results)
+        self.output.print_footer()
 
         return results

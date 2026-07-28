@@ -73,6 +73,9 @@ class Formatter:
     def print_warning(self, message):
         print(f"{self.WARNING} + {message}")
 
+    def print_info(self, message):
+        print(f"{self.INFO} + {message}")
+
     def print_error(self, results):
         if results["stderr"]:
             print(f"\n {self.ERROR} Error:")
