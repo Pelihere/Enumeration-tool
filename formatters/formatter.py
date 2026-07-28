@@ -20,11 +20,27 @@ class Formatter:
     INFO = Fore.CYAN + "[+]"
     DATA = Fore.MAGENTA + "[>]"
     HEADER = Fore.BLUE
+    FOOTER = Fore.BLUE
 
     width = 50
 
     def __init__(self):
         pass
+
+    def _flatten_results(self, results):
+        flat = []
+
+        for value in results.values():
+
+            if not isinstance(value, dict):
+                continue
+
+            if "success" in value:
+                flat.append(value)
+            else:
+                flat.extend(self._flatten_results(value))
+
+        return flat
 
     def print_header(self, enumerationType):
         print(self.HEADER + "═" * self.width)
@@ -32,7 +48,7 @@ class Formatter:
         print(self.HEADER + "═" * self.width)
 
     def print_footer(self):
-        print(self.HEADER + "═" * self.width)
+        print(self.FOOTER + "═" * self.width)
         print()
 
     def print_tool_info(self, results, target):
@@ -64,14 +80,15 @@ class Formatter:
             print(results["stderr"])
 
     def print_summary(self, results):
-        total = len(results)
-        success = sum(r["success"] for r in results.values())
+        flat_results = self._flatten_results(results)
+
+        total = len(flat_results)
+        success = sum(r["success"] for r in flat_results)
         failed = total - success
 
         total_time = sum(
             r.get("execution_time", 0)
-            for r in results.values()
-            if isinstance(r, dict)
+            for r in flat_results
         )
 
         print()
@@ -83,3 +100,8 @@ class Formatter:
         print(f"{self.SUCCESS} {'Successful':<18}: {success}")
         print(f"{self.ERROR} {'Failed':<18}: {failed}")
         print(f"{self.INFO} {'Total Time':<18}: {total_time:.3f} s")
+
+    def print_display(self, result):
+        self.print_tool_info(result)
+        self.print_result(result)
+        self.print_error(result)

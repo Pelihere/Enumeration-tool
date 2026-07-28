@@ -55,8 +55,6 @@ def enumeration_executor(target, ports):
         print(f"\n[#] Running {module.__name__}...")
 
         try:
-
-            # SMTP ساختارش با بقیه فرق دارد
             if module == SME:
                 enum = module()
                 results[module.__name__] = enum.enumerate(target, port)
