@@ -1,4 +1,5 @@
 from core.command_runner import CommandRunner
+from formatters.formatter import Formatter
 
 
 class DNSEnumeration:
@@ -8,15 +9,22 @@ class DNSEnumeration:
         self.runner = CommandRunner()
         self.tool = None
         self.name_servers = []
+        self.output = Formatter()
+        self.enumeration_type = "DNS Enumeration"
+
+    def _execute(self, command):
+        results = self.runner.run(command)
+        self.output.print_display(results)
+        return results
 
     def version_enu(self):
-        result = self.runner.run(["dig", f"@{self.target}", "version.bind", "txt", "chaos"])
+        result = self._execute(["dig", f"@{self.target}", "version.bind", "txt", "chaos"])
 
         if result["success"]:
             self.tool = "dig"
             return result
 
-        result = self.runner.run(["nslookup", "-type=NS", self.target])
+        result = self._execute(["nslookup", "-type=NS", self.target])
 
         if result["success"]:
             self.tool = "nslookup"
@@ -28,7 +36,7 @@ class DNSEnumeration:
     def name_server_enu(self):
 
         if self.tool == "dig":
-            result = self.runner.run(["dig", "NS", self.target])
+            result = self._execute(["dig", "NS", self.target])
 
             if result["success"]:
                 self.name_servers.clear()
@@ -40,7 +48,7 @@ class DNSEnumeration:
             return result
 
         elif self.tool == "nslookup":
-            result = self.runner.run(["nslookup", "-type=NS", self.target])
+            result = self._execute(["nslookup", "-type=NS", self.target])
 
             if result["success"]:
                 self.name_servers.clear()
@@ -56,10 +64,10 @@ class DNSEnumeration:
     def soa_enu(self):
 
         if self.tool == "dig":
-            return self.runner.run(["dig", "SOA", self.target])
+            return self._execute(["dig", "SOA", self.target])
 
         elif self.tool == "nslookup":
-            return self.runner.run(["nslookup", "-type=SOA", self.target])
+            return self._execute(["nslookup", "-type=SOA", self.target])
 
         return {}
 
@@ -68,46 +76,35 @@ class DNSEnumeration:
         if self.tool != "dig":
             return {}
 
-        return self.runner.run(["dig", "AXFR", self.target, f"@{nameserver}"])
+        return self._execute(["dig", "AXFR", self.target, f"@{nameserver}"])
 
     def general_enu(self):
 
         results = {}
+        records = ["A","AAAA","MX","TXT","CNAME"]
 
-        if self.tool == "dig":
+        for record in records:
+            if self.tool == "dig":
+                cmd = ["dig", record, self.target]
 
-            records = [
-                "A",
-                "AAAA",
-                "MX",
-                "TXT",
-                "CNAME"
-            ]
+            elif self.tool == "nslookup":
+                cmd = ["nslookup", f"-type={record}", self.target]
 
-            for record in records:
-                results[record] = self.runner.run(["dig", record, self.target])
-
-        elif self.tool == "nslookup":
-
-            records = [
-                "A",
-                "AAAA",
-                "MX",
-                "TXT",
-                "CNAME"
-            ]
-
-            for record in records:
-                results[record] = self.runner.run(["nslookup", f"-type={record}", self.target])
-
-        return results
-
+        results[record] = self._execute(cmd)
+        
     def run(self):
 
         results = {}
+        self.output.print_header(self.enumeration_type)
 
-        if not self.version_enu()["success"]:
+        version_info = self.version_enu()
+
+        if not version_info["success"]:
+            self.output.print_summary(results)
+            self.output.print_footer()
             return {}
+
+        results["version"] = version_info
 
         results["version"] = self.version_enu()
         results["name_servers"] = self.name_server_enu()
@@ -119,5 +116,8 @@ class DNSEnumeration:
         if self.tool == "dig":
             for ns in self.name_servers:
                 results["zone_transfer"][ns] = self.zone_transfer_enu(ns)
+
+        self.output.print_summary(results)
+        self.output.print_footer()
 
         return results
