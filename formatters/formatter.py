@@ -1,12 +1,7 @@
-'''
-[+] Information / Running         
-[✓] Success                      
-[-] Error                         
-[*] Warning / Notice              
-[>] Discovered Information        
+'''                   
+[-] Error                                           
 [#] Section Header                
 [!] High Risk / Important Finding 
-[✗] Error
 '''
 from colorama import Fore, Style, init
 
