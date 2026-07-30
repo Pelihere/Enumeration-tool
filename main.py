@@ -1,15 +1,16 @@
-from core.port_scanner import port_scan
+from core.port_scanner import PortScanner
 from modules.SMTP_enu import SMTPEnumeration as SNE
 from modules.SNMP_enu import SNMPEnumeration as SE
 from modules.LDAP_enu import LDAPEnumeration as LE
-from modules.SMTP_enu import SMTPEnumeration as SME
+from modules.smb_Netbios_enu import SMBNetBIOSEnumeration as SME
 from modules.DNS_enu import DNSEnumeration as DE
 from modules.NTP_enu import NTPEnumeration as NE
 from modules.IPsec_enu import IPsecEnumeration as IE
 from validators import ipv4, domain
+from formatters.formatter import Formatter
 
 
-enumeration_modules = {
+enumeration_module_classs = {
     25: SME,
     53: DE,
     123: NE,
@@ -27,10 +28,10 @@ def get_basic_info():
     target = input("[+] Enter target: ").strip()
 
     if not (ipv4(target) or domain(target)):
-        print("[-] Invalid IP address or domain.")
+        Formatter.print_warning("Invalid IP address or domain.")
         return None, None
 
-    scanner = port_scan(target)
+    scanner = PortScanner(target)
     open_ports = scanner.scan()
 
     return target, open_ports
@@ -41,30 +42,28 @@ def enumeration_executor(target, ports):
     executed = set()
 
     for port in ports:
+        module_class = enumeration_module_classs.get(port)
 
-        module = enumeration_modules.get(port)
-
-        if module is None:
+        if module_class is None:
             continue
 
-        if module in executed:
+        if module_class in executed:
             continue
 
-        executed.add(module)
+        executed.add(module_class)
 
-        print(f"\n[#] Running {module.__name__}...")
+        Formatter.print_info(f"\nRunning {module_class.__name__}...")
 
         try:
-            if module == SME:
-                enum = module()
-                results[module.__name__] = enum.enumerate(target, port)
-
+            if module_class == SME:
+                enum = module_class()
+                results[module_class.__name__] = enum.enumerate(target, port)
             else:
-                enum = module(target)
-                results[module.__name__] = enum.run(ports)
+                enum = module_class(target)
+                results[module_class.__name__] = enum.run()
 
         except Exception as e:
-            print(f"[-] {module.__name__} failed.\nError: {e}")
+            print(f"[-] {module_class.__name__} failed.\nError: {e}")
 
     return results
 
@@ -72,13 +71,9 @@ def enumeration_executor(target, ports):
 if __name__ == "__main__":
 
     target, ports = get_basic_info()
-
     if target and ports:
-
         results = enumeration_executor(target, ports)
-
-        print("\n========== RESULTS ==========")
-
-        for module, output in results.items():
-            print(f"\n[{module}]")
+        Formatter.print_header("Results")
+        for module_class, output in results.items():
+            print(f"\n[{module_class}]")
             print(output)

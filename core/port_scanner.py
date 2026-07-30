@@ -1,7 +1,7 @@
 import socket
 from concurrent.futures import ThreadPoolExecutor
 
-class port_scan:
+class PortScanner:
     def __init__(self, target):
         self.target = target
         self.open_ports = []
