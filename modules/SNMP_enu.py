@@ -9,6 +9,7 @@ class SNMPEnumeration:
         self.runner = CommandRunner()
         self.output = Formatter()
         self.enumeration_type = "SNMP Enumeration"
+        self.probe_results = {}
 
     def _execute(self, command):
         results = self.runner.run(command)
@@ -16,7 +17,8 @@ class SNMPEnumeration:
         return results
 
     def version_detection(self):
-        ver2_info = self.runner.run(["snmpwalk", "-v2c", "-c", self.community, self.target, "1.3.6.1.2.1.1"])
+        ver2_info = self._execute(["snmpwalk", "-v2c", "-c", self.community, self.target, "1.3.6.1.2.1.1"])
+        self.probe_results["v2c_probe"] = ver2_info
 
         if ver2_info["success"]:
             self.output.print_info("SNMP v2c detected.")
@@ -25,7 +27,8 @@ class SNMPEnumeration:
 
         self.output.print_warning("SNMP v2c probe failed, trying v1...")
 
-        ver1_info = self.runner.run(["snmpwalk", "-v1", "-c", self.community, self.target, "1.3.6.1.2.1.1"])
+        ver1_info = self._execute(["snmpwalk", "-v1", "-c", self.community, self.target, "1.3.6.1.2.1.1"])
+        self.probe_results["v1_probe"] = ver1_info
 
         if ver1_info["success"]:
             self.output.print_info("SNMP v1 detected.")
@@ -81,10 +84,13 @@ class SNMPEnumeration:
         results = {}
         self.output.print_header(self.enumeration_type)
         if not self.version_detection():
-            self.output.print_summary({})
+            results.update(self.probe_results)
+            self.output.print_summary(results)
             self.output.print_footer()
             return {}
-        
+
+        results.update(self.probe_results)
+
         enumerations = {
             "system": self.system_enu,
             "interface": self.interface_enu,

@@ -17,7 +17,8 @@ class PortScanner:
 
                 if result == 0:
                     print(f"FOUND {port}")
-                    self.open_ports.append(port)
+                    with self.lock:
+                        self.open_ports.append(port)
 
             except Exception as e:
                 print(port, e)

@@ -3,7 +3,8 @@ from formatters.formatter import Formatter
 
 class SMTPEnumeration:
 
-    def __init__(self):
+    def __init__(self, target):
+        self.target = target
         self.socket = None
         self.timeout = 5
         self.output = Formatter()
@@ -63,7 +64,7 @@ class SMTPEnumeration:
             self.socket.close()
             self.socket = None
 
-    def run(self, ip, port):
+    def run(self, port):
 
         self.output.print_header(self.enumeration_type)
 
@@ -79,7 +80,7 @@ class SMTPEnumeration:
         }
 
         try:
-            banner = self.connect(ip, port)
+            banner = self.connect(self.target, port)
 
             if banner is None:
                 return {}

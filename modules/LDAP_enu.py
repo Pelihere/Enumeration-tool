@@ -14,11 +14,7 @@ class LDAPEnumeration:
         self.output.print_display(results)
         return results
 
-    def anonymous_enu(self, port):
-        if port not in (389, 636):
-            self.output.print_warning("LDAP enumeration skipped (unsupported port).")
-            return {}
-            
+    def anonymous_enu(self):
         return self._execute(["ldapsearch", "-x", "-H", f"ldap://{self.target}", "-s", "base"])
 
     def discover_base_dn(self):
@@ -53,14 +49,21 @@ class LDAPEnumeration:
     def run(self):
         results = {}
         self.output.print_header(self.enumeration_type)
+
+        results["anonymous_bind"] = self.anonymous_enu()
+
         root_info = self.discover_base_dn()
+        results["naming_contexts"] = root_info
 
         if not root_info["success"]:
-            self.output.print_summary({})
+            self.output.print_summary(results)
             self.output.print_footer()
             return {}
+
         if self.base_dn is None:
             self.output.print_warning("Base DN could not be discovered.")
+            self.output.print_summary(results)
+            self.output.print_footer()
             return {}
 
         enumerations = {
@@ -77,4 +80,4 @@ class LDAPEnumeration:
         self.output.print_summary(results=results)
         self.output.print_footer()
 
-        return results 
+        return results

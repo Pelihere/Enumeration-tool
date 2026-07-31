@@ -81,7 +81,7 @@ class DNSEnumeration:
     def general_enu(self):
 
         results = {}
-        records = ["A","AAAA","MX","TXT","CNAME"]
+        records = ["A", "AAAA", "MX", "TXT", "CNAME"]
 
         for record in records:
             if self.tool == "dig":
@@ -90,8 +90,13 @@ class DNSEnumeration:
             elif self.tool == "nslookup":
                 cmd = ["nslookup", f"-type={record}", self.target]
 
-        results[record] = self._execute(cmd)
-        
+            else:
+                continue
+
+            results[record] = self._execute(cmd)
+
+        return results
+
     def run(self):
 
         results = {}
@@ -105,8 +110,6 @@ class DNSEnumeration:
             return {}
 
         results["version"] = version_info
-
-        results["version"] = self.version_enu()
         results["name_servers"] = self.name_server_enu()
         results["soa"] = self.soa_enu()
         results["records"] = self.general_enu()

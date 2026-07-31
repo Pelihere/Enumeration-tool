@@ -11,24 +11,28 @@ from formatters.formatter import Formatter
 
 
 enumeration_module_classs = {
-    25: SME,
-    53: DE,
-    123: NE,
-    139: SNE,
-    161: SE,
-    389: LE,
-    445: SNE,
-    500: IE,
-    636: LE,
-    4500: IE,
+    25: SNE,    # SMTP
+    53: DE,     # DNS
+    123: NE,    # NTP
+    137: SME,   # NetBIOS Name Service
+    139: SME,   # SMB / NetBIOS Session Service
+    161: SE,    # SNMP
+    389: LE,    # LDAP
+    445: SME,   # SMB (Microsoft-DS)
+    500: IE,    # IPsec/IKE
+    636: LE,    # LDAPS
+    4500: IE,   # IPsec NAT-T
 }
+
+
+formatter = Formatter()
 
 
 def get_basic_info():
     target = input("[+] Enter target: ").strip()
 
     if not (ipv4(target) or domain(target)):
-        Formatter.print_warning("Invalid IP address or domain.")
+        formatter.print_warning("Invalid IP address or domain.")
         return None, None
 
     scanner = PortScanner(target)
@@ -52,12 +56,15 @@ def enumeration_executor(target, ports):
 
         executed.add(module_class)
 
-        Formatter.print_info(f"\nRunning {module_class.__name__}...")
+        formatter.print_info(f"\nRunning {module_class.__name__}...")
 
         try:
             if module_class == SME:
+                enum = module_class(target)
+                results[module_class.__name__] = enum.run(ports)
+            elif module_class == SNE:
                 enum = module_class()
-                results[module_class.__name__] = enum.enumerate(target, port)
+                results[module_class.__name__] = enum.run(target, port)
             else:
                 enum = module_class(target)
                 results[module_class.__name__] = enum.run()
@@ -73,7 +80,7 @@ if __name__ == "__main__":
     target, ports = get_basic_info()
     if target and ports:
         results = enumeration_executor(target, ports)
-        Formatter.print_header("Results")
+        formatter.print_header("Results")
         for module_class, output in results.items():
             print(f"\n[{module_class}]")
             print(output)

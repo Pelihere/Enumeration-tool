@@ -46,23 +46,24 @@ class Formatter:
         print(self.FOOTER + "═" * self.width)
         print()
 
-    def print_tool_info(self, results, target):
-        print(f"{self.INFO} {'Target':<15}: {target}")
-        print(f"{self.INFO} {'Tool':<15}: {results['tool']}")
-        print(f"{self.INFO} {'Command':<15}: {' '.join(results['command'])}")
-        print(f"{self.INFO} {'Time':<15}: {results['execution_time']} s")
-        if results["success"] :
+    def print_tool_info(self, results, target=None):
+        if target is not None:
+            print(f"{self.INFO} {'Target':<15}: {target}")
+        print(f"{self.INFO} {'Tool':<15}: {results.get('tool', 'N/A')}")
+        print(f"{self.INFO} {'Command':<15}: {' '.join(results.get('command', []))}")
+        print(f"{self.INFO} {'Time':<15}: {results.get('execution_time')} s")
+        if results.get("success"):
             print(f"{self.SUCCESS} {'Success':<15}:   Success")
         else:
             print(f"{self.ERROR} {'Success':<15}:   failed")
 
     def print_result(self, result):
-        if not result["stdout"].strip():
+        if not result.get("stdout", "").strip():
             return
 
         print()
         print(self.DATA + " Output")
-        print("─" * self.WIDTH)
+        print("─" * self.width)
         print(result["stdout"].rstrip())
 
     def print_warning(self, message):
@@ -72,9 +73,9 @@ class Formatter:
         print(f"{self.INFO} + {message}")
 
     def print_error(self, results):
-        if results["stderr"]:
+        if results.get("stderr"):
             print(f"\n {self.ERROR} Error:")
-            print("-" * 50)
+            print("-" * self.width)
             print(results["stderr"])
 
     def print_summary(self, results):
@@ -85,21 +86,21 @@ class Formatter:
         failed = total - success
 
         total_time = sum(
-            r.get("execution_time", 0)
+            r.get("execution_time", 0) or 0
             for r in flat_results
         )
 
         print()
-        print(self.HEADER + "═" * self.WIDTH)
+        print(self.HEADER + "═" * self.width)
         print(self.HEADER + "Summary")
-        print(self.HEADER + "═" * self.WIDTH)
+        print(self.HEADER + "═" * self.width)
 
         print(f"{self.INFO} {'Total Commands':<18}: {total}")
         print(f"{self.SUCCESS} {'Successful':<18}: {success}")
         print(f"{self.ERROR} {'Failed':<18}: {failed}")
         print(f"{self.INFO} {'Total Time':<18}: {total_time:.3f} s")
 
-    def print_display(self, result):
-        self.print_tool_info(result)
+    def print_display(self, result, target=None):
+        self.print_tool_info(result, target)
         self.print_result(result)
         self.print_error(result)
