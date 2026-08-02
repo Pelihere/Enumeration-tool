@@ -141,7 +141,6 @@ python main.py
 [+] Enter target: 192.168.1.10
 ```
 
-Scan a domain
 
 
 ---
