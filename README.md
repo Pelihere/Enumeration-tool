@@ -96,7 +96,6 @@ Enumeration-Tool/
 ├── formatters/
 │   └── formatter.py
 │
-├── reports/              # generated JSON reports (git-ignored)
 │
 ├── REQIERMENTS.txt
 │
