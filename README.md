@@ -169,13 +169,11 @@ The project follows several software engineering principles:
 - [x] SNMP
 - [x] NetBIOS
 - [x] NTP
-- [x] Linux
-- [x] Windows
 
 ### Upcoming Modules
 
 - [ ] RPC
-- [ ] FTP
+- [x] FTP
 - [ ] HTTP
 - [ ] SSH
 - [ ] Kerberos

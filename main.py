@@ -6,18 +6,23 @@ from modules.smb_Netbios_enu import SMBNetBIOSEnumeration as SME
 from modules.DNS_enu import DNSEnumeration as DE
 from modules.NTP_enu import NTPEnumeration as NE
 from modules.IPsec_enu import IPsecEnumeration as IE
+from modules.FTP_enu import FTPEnumeration as FE
+from modules.HTTP_enu import HTTPEnumeration as HE
 from validators import ipv4, domain
 from formatters.formatter import Formatter
 
 
 enumeration_module_classs = {
+    21: FE,     # FTP
     25: SNE,    # SMTP
     53: DE,     # DNS
+    80: HE,
     123: NE,    # NTP
     137: SME,   # NetBIOS Name Service
     139: SME,   # SMB / NetBIOS Session Service
     161: SE,    # SNMP
     389: LE,    # LDAP
+    443: HE,
     445: SME,   # SMB (Microsoft-DS)
     500: IE,    # IPsec/IKE
     636: LE,    # LDAPS
@@ -65,6 +70,9 @@ def enumeration_executor(target, ports):
             elif module_class == SNE:
                 enum = module_class()
                 results[module_class.__name__] = enum.run(target, port)
+            elif module_class == FE:
+                enum = module_class(target)
+                results[module_class.__name__] = enum.run(port)
             else:
                 enum = module_class(target)
                 results[module_class.__name__] = enum.run()
