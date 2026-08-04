@@ -35,6 +35,8 @@ Instead of manually executing multiple reconnaissance tools one by one, this fra
 - 🚀 Fast execution
 - 📦 Plugin-oriented design
 - 🛠 Integration with common security tools
+- 💻 Full CLI support via `argparse`
+- 📤 JSON report export
 
 ---
 
@@ -49,16 +51,18 @@ Instead of manually executing multiple reconnaissance tools one by one, this fra
                         ▼
               Detect Open Services
                         │
-        ┌───────────────┼───────────────┐
-        ▼               ▼               ▼
-    DNS Module     SMTP Module     LDAP Module
-        ▼               ▼               ▼
-     Parse Data     Parse Data     Parse Data
-        └───────────────┼───────────────┘
+    ┌──────────┬────────┼────────┬──────────┐
+    ▼          ▼        ▼        ▼          ▼
+  DNS        SMTP     LDAP     HTTP        FTP     ... (SNMP, NTP, IPsec, SMB/NetBIOS)
+    ▼          ▼        ▼        ▼          ▼
+ Parse Data Parse Data Parse Data Parse Data Parse Data
+    └──────────┴────────┼────────┴──────────┘
                         ▼
                 Unified Output Engine
-                        ▼
-             Final Enumeration Report
+                        │
+                ┌───────┴───────┐
+                ▼               ▼
+          Console Report   JSON Report
 ```
 
 ---
@@ -71,24 +75,30 @@ Enumeration-Tool/
 │
 ├── main.py
 │
-├── modules/
-│   ├── dns.py
-│   ├── smtp.py
-│   ├── ldap.py
-│   ├── snmp.py
-│   ├── ntp.py
-│   ├── netbios.py
-│   ├── ipsec.py
-│   
+├── core/
+│   ├── command_runner.py
+│   └── port_scanner.py
 │
-├── scanner/
-│   └── parser.py
+├── modules/
+│   ├── DNS_enu.py
+│   ├── SMTP_enu.py
+│   ├── SNMP_enu.py
+│   ├── LDAP_enu.py
+│   ├── NTP_enu.py
+│   ├── IPsec_enu.py
+│   ├── smb_Netbios_enu.py
+│   ├── FTP_enu.py
+│   └── HTTP_enu.py
+│
+├── exporter/
+│   └── json_exporter.py
 │
 ├── formatters/
-│   ├── formatter.py
+│   └── formatter.py
 │
+├── reports/              # generated JSON reports (git-ignored)
 │
-├── requirements.txt
+├── REQIERMENTS.txt
 │
 └── README.md
 ```
@@ -104,8 +114,11 @@ Enumeration-Tool/
 | SNMP      | Community strings, system information     |
 | LDAP      | Naming contexts, directory information    |
 | NetBIOS   | Machine names, workgroups                 |
-| NTP       | Information disclosure                    |
-| IPsec     | VPN endpoint detection                    |
+| SMB       | Share, user, and group enumeration via RPC|
+| NTP       | Information disclosure, monlist           |
+| IPsec     | VPN endpoint / IKE detection              |
+| FTP       | Banner grabbing, anonymous login test     |
+| HTTP/S    | Headers, OPTIONS, robots.txt, common paths|
 
 ---
 
@@ -124,25 +137,69 @@ External tools:
 - nmblookup
 - curl
 
-Install dependencies:
+Install Python dependencies:
 
 ```bash
-pip install -r requirements.txt
+pip install -r REQIERMENTS.txt
 ```
 
 ---
 
 # 🚀 Usage
 
-Scan an IP address
+### Interactive mode (no arguments)
 
 ```bash
-python main.py 
+python main.py
 
 [+] Enter target: 192.168.1.10
 ```
 
+### CLI mode (via argparse)
 
+```bash
+# Full scan + JSON report
+python main.py -t 192.168.1.10 --json
+
+# Skip the port scan, enumerate specific ports directly
+python main.py -t 192.168.1.10 -p 21,53,80,443 --json
+
+# Limit the scan range (faster than the full 1-65535 sweep)
+python main.py -t test.local --start-port 1 --end-port 1024 --json --output my_reports/
+
+# Show all available options
+python main.py --help
+```
+
+### CLI options
+
+| Flag | Description | Default |
+|---|---|---|
+| `-t`, `--target` | Target IP address or domain | prompts interactively if omitted |
+| `-p`, `--ports` | Comma-separated list of ports to enumerate directly, skipping the port scan | none |
+| `--start-port` | Start port for the full scan (used only when `--ports` is not given) | 1 |
+| `--end-port` | End port for the full scan (used only when `--ports` is not given) | 65535 |
+| `--json` | Export results to a timestamped JSON report | disabled |
+| `--output` | Directory to write the JSON report into | `reports/` |
+
+---
+
+# 📤 JSON Reports
+
+When run with `--json`, a report is written to the output directory with the following structure:
+
+```json
+{
+  "target": "192.168.1.10",
+  "open_ports": [21, 53, 80],
+  "scan_start": "2026-08-04 09:00:00",
+  "scan_end": "2026-08-04 09:02:15",
+  "total_scan_time": 135.42,
+  "results": { ... }
+}
+```
+
+Reports are named `<target>_<unix_timestamp>.json` so repeated scans of the same target never overwrite each other.
 
 ---
 
@@ -170,12 +227,13 @@ The project follows several software engineering principles:
 - [x] SNMP
 - [x] NetBIOS
 - [x] NTP
+- [x] IPsec
+- [x] FTP
+- [x] HTTP
 
 ### Upcoming Modules
 
-- [ ] RPC
-- [x] FTP
-- [x] HTTP
+- [ ] RPC (standalone)
 - [ ] SSH
 - [ ] Kerberos
 - [ ] MySQL
@@ -188,15 +246,18 @@ The project follows several software engineering principles:
 
 # 📊 Future Features
 
-- HTML Reports
-- JSON Export
-- XML Export
-- Logging Engine
-- CVE Lookup
-- Vulnerability Detection
-- Multi-threading
-- Plugin Support
-- Docker Support
+- [x] JSON Export
+- [x] CLI support (argparse)
+- [ ] CVE Lookup
+- [ ] HTML Reports
+- [ ] XML Export
+- [ ] Logging Engine
+- [ ] Vulnerability Detection
+- [ ] Multi-threading (parallel module execution)
+- [ ] Plugin Support
+- [ ] Docker Support
+- [ ] Unit Tests (pytest)
+- [ ] Config file support (default community strings, timeouts, wordlists)
 
 ---
 
