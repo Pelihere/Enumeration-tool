@@ -8,8 +8,12 @@ from modules.NTP_enu import NTPEnumeration as NE
 from modules.IPsec_enu import IPsecEnumeration as IE
 from modules.FTP_enu import FTPEnumeration as FE
 from modules.HTTP_enu import HTTPEnumeration as HE
-from validators import ipv4, domain
+
 from formatters.formatter import Formatter
+from exporter.json_exporter import JSONExporter
+
+from validators import ipv4, domain
+import time
 
 
 enumeration_module_classs = {
@@ -87,8 +91,14 @@ if __name__ == "__main__":
 
     target, ports = get_basic_info()
     if target and ports:
+        start = time.time()
         results = enumeration_executor(target, ports)
+        end = time.time()
+
         formatter.print_header("Results")
         for module_class, output in results.items():
             print(f"\n[{module_class}]")
             print(output)
+
+        report_path = JSONExporter().export(target, ports, results, scan_start=start, scan_end=end)
+        formatter.print_info(f"JSON report saved to: {report_path}")

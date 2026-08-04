@@ -122,6 +122,7 @@ External tools:
 - rpcclient
 - smbclient
 - nmblookup
+- curl
 
 Install dependencies:
 
@@ -174,7 +175,7 @@ The project follows several software engineering principles:
 
 - [ ] RPC
 - [x] FTP
-- [ ] HTTP
+- [x] HTTP
 - [ ] SSH
 - [ ] Kerberos
 - [ ] MySQL
